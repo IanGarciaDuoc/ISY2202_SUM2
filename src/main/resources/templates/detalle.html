@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${receta?.nombre}">Detalle de Receta</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .header-section {
+            background-color: #20B2AA;
+            color: white;
+            padding: 2rem 0;
+        }
+        .recipe-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header-section">
+        <div class="container">
+            <h1 th:text="${receta?.nombre}">Nombre de la Receta</h1>
+        </div>
+    </header>
+
+    <div class="container mt-4">
+        <a href="/" class="btn btn-secondary mb-4">← Volver</a>
+
+        <!-- Sección de imagen -->
+        <!-- Sección de imagen -->
+<div class="mb-4" th:if="${imagen != null}">
+    <img th:src="@{'/imagenes/ver/' + ${receta.id}}" 
+         class="img-fluid rounded" 
+         style="max-height: 400px; width: 100%; object-fit: cover;"
+         th:alt="${receta.nombre}"/>
+</div>
+<div th:if="${imagen == null}" class="alert alert-info">
+    No hay imagen disponible para esta receta
+</div>
+
+<!-- Debug info -->
+<div class="alert alert-info mt-3" th:if="${imagen != null}">
+    <h5>Información de Debug:</h5>
+    <p>ID de Receta: <span th:text="${receta.id}"></span></p>
+    <p>URL en BD: <span th:text="${imagen.url}"></span></p>
+    <p>Tipo: <span th:text="${imagen.tipo}"></span></p>
+</div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Información de la receta -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <span class="badge bg-success me-2" th:text="${receta.dificultad}">Fácil</span>
+                        <span class="badge bg-info" th:text="${receta.tiempoCoccion + ' min'}">30 min</span>
+                        
+                        <div class="mt-3">
+                            <p><strong>Tipo de Cocina:</strong> <span th:text="${receta.tipoCocina}">Italiana</span></p>
+                            <p><strong>País de Origen:</strong> <span th:text="${receta.paisOrigen}">Italia</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preparación -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2>Preparación</h2>
+                        <p th:text="${receta.descripcion}">Descripción de la preparación</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <!-- Ingredientes -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="h5 mb-0">Ingredientes</h2>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li th:each="ingrediente : ${receta.ingredientes}" 
+                                th:text="${ingrediente}"
+                                class="list-group-item">
+                                Ingrediente
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de comentarios -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h2>Comentarios</h2>
+                
+                <!-- Formulario de comentarios -->
+                <div sec:authorize="isAuthenticated()" class="mb-4">
+                    <form th:action="@{/recetas/detalle/{id}/comentar(id=${receta.id})}"
+                          method="post">
+                        <div class="mb-3">
+                            <label for="valoracion" class="form-label">Tu valoración</label>
+                            <select name="valoracion" class="form-select" id="valoracion" required>
+                                <option value="">Selecciona una valoración</option>
+                                <option value="1">1 estrella</option>
+                                <option value="2">2 estrellas</option>
+                                <option value="3">3 estrellas</option>
+                                <option value="4">4 estrellas</option>
+                                <option value="5">5 estrellas</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="contenido" class="form-label">Tu comentario</label>
+                            <textarea name="contenido" 
+                                    class="form-control" 
+                                    id="contenido" 
+                                    rows="3" 
+                                    required></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            Publicar comentario
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Mensaje para usuarios no autenticados -->
+                <div sec:authorize="!isAuthenticated()" class="alert alert-info">
+                    Para dejar un comentario, por favor 
+                    <a th:href="@{/login}">inicia sesión</a> o 
+                    <a th:href="@{/registro}">regístrate</a>.
+                </div>
+
+                <!-- Lista de comentarios -->
+                <div th:if="${#lists.isEmpty(comentarios)}" class="alert alert-info">
+                    Aún no hay comentarios. ¡Sé el primero en comentar!
+                </div>
+
+                <div th:each="comentario : ${comentarios}" class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <strong th:text="${comentario.usuario.username}">Usuario</strong>
+                            <small class="text-muted" 
+                                   th:text="${#temporals.format(comentario.fecha, 'dd/MM/yyyy HH:mm')}">
+                                Fecha
+                            </small>
+                        </div>
+                        <div class="text-warning mb-2">
+                            <i class="fas fa-star" 
+                               th:each="i : ${#numbers.sequence(1, comentario.valoracion)}"></i>
+                        </div>
+                        <p class="mb-0" th:text="${comentario.contenido}">
+                            Contenido del comentario
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+</body>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        if (!searchInput) return; // Verifica que el elemento existe
+    
+        let timeoutId;
+    
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(timeoutId);
+            const query = e.target.value.trim();
+    
+            timeoutId = setTimeout(() => {
+                // Añade un console.log para debug
+                console.log('Realizando búsqueda:', query);
+    
+                fetch(`/recetas/api/buscar?nombre=${encodeURIComponent(query)}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Error en la respuesta del servidor');
+                        }
+                        return response.json();
+                    })
+                    .then(recetas => {
+                        console.log('Recetas recibidas:', recetas); // Debug
+                        actualizarRecetas(recetas);
+                    })
+                    .catch(error => {
+                        console.error('Error en la búsqueda:', error);
+                    });
+            }, 300);
+        });
+    
+        function actualizarRecetas(recetas) {
+            const container = document.querySelector('.row.g-4');
+            if (!container) {
+                console.error('No se encontró el contenedor de recetas');
+                return;
+            }
+    
+            if (!recetas || recetas.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12 text-center">
+                        <p class="text-muted">No se encontraron recetas</p>
+                    </div>`;
+                return;
+            }
+    
+            container.innerHTML = recetas.map(receta => `
+                <div class="col-md-4 mb-4">
+                    <div class="card recipe-card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="recipe-title">${receta.nombre || 'Sin nombre'}</h5>
+                            <div class="recipe-info">
+                                <span class="difficulty-badge ${getDificultadClass(receta.dificultad)}">
+                                    ${receta.dificultad || 'N/A'}
+                                </span>
+                                <div class="cooking-time">
+                                    <i class="fas fa-clock"></i>
+                                    <span class="${getTiempoClass(receta.tiempoCoccion)}">
+                                        ${receta.tiempoCoccion || 0} min
+                                    </span>
+                                </div>
+                            </div>
+                            <a href="/recetas/detalle/${receta.id}" class="btn-ver-detalles mt-auto">
+                                Ver Detalles
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    
+        function getDificultadClass(dificultad) {
+            switch(dificultad) {
+                case 'Fácil': return 'difficulty-facil';
+                case 'Media': return 'difficulty-media';
+                case 'Difícil': return 'difficulty-dificil';
+                default: return '';
+            }
+        }
+    
+        function getTiempoClass(tiempo) {
+            if (!tiempo) return 'time-rapido';
+            if (tiempo <= 30) return 'time-rapido';
+            if (tiempo <= 60) return 'time-medio';
+            return 'time-largo';
+        }
+    });
+
+
+    
+    </script>
+</html>

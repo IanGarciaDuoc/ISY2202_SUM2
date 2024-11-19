@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="layouts/base :: head"></head>
+<body>
+    <div th:fragment="content">
+        <!-- Formulario de Búsqueda -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4 class="card-title mb-4">Buscar Recetas</h4>
+                <form th:action="@{/buscar}" method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="nombre" class="form-label">Nombre de la receta</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" th:value="${param.nombre}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="tipoCocina" class="form-label">Tipo de Cocina</label>
+                        <select class="form-select" id="tipoCocina" name="tipoCocina">
+                            <option value="">Todos</option>
+                            <option th:each="tipo : ${tiposCocina}"
+                                    th:value="${tipo}"
+                                    th:text="${tipo}"
+                                    th:selected="${param.tipoCocina == tipo}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="dificultad" class="form-label">Dificultad</label>
+                        <select class="form-select" id="dificultad" name="dificultad">
+                            <option value="">Todas</option>
+                            <option th:each="dif : ${dificultades}"
+                                    th:value="${dif}"
+                                    th:text="${dif}"
+                                    th:selected="${param.dificultad == dif}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="paisOrigen" class="form-label">País de Origen</label>
+                        <select class="form-select" id="paisOrigen" name="paisOrigen">
+                            <option value="">Todos</option>
+                            <option th:each="pais : ${paises}"
+                                    th:value="${pais}"
+                                    th:text="${pais}"
+                                    th:selected="${param.paisOrigen == pais}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="ingrediente" class="form-label">Ingrediente</label>
+                        <input type="text" class="form-control" id="ingrediente" name="ingrediente" th:value="${param.ingrediente}">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Buscar</button>
+                        <a th:href="@{/buscar}" class="btn btn-secondary">Limpiar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Resultados de la Búsqueda -->
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            <div class="col" th:each="receta : ${recetas}">
+                <div class="card h-100">
+                    <img th:if="${receta.imagenes != null and !receta.imagenes.empty}"
+                         th:src="${receta.imagenes[0].url}"
+                         class="card-img-top"
+                         alt="Imagen de receta">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${receta.nombre}">Nombre de la Receta</h5>
+                        <p class="card-text" th:text="${receta.descripcion}">Descripción</p>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="badge bg-primary" th:text="${receta.dificultad}">Dificultad</span>
+                            <span class="badge bg-info" th:text="${receta.tipoCocina}">Tipo de Cocina</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i>
+                                <span th:text="${receta.tiempoCoccion + ' min'}">Tiempo</span>
+                            </small>
+                            <small class="text-muted">
+                                <i class="fas fa-globe"></i>
+                                <span th:text="${receta.paisOrigen}">País</span>
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a th:href="@{/recetas/{id}(id=${receta.id})}" class="btn btn-primary">Ver Receta</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mensaje si no hay resultados -->
+        <div th:if="${#lists.isEmpty(recetas)}" class="alert alert-info mt-4">
+            No se encontraron recetas que coincidan con tu búsqueda.
+        </div>
+    </div>
+</body>
+</html>

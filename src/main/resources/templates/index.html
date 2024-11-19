@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Libro de Recetas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .header-section {
+            background-color: #17a2b8;
+            padding: 2rem 0;
+            color: white;
+            text-align: center;
+        }
+        
+        .nav-section {
+            background-color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .nav-link {
+            color: #333;
+            text-decoration: none;
+            margin: 0 1rem;
+        }
+        
+        .btn-login {
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            text-decoration: none;
+        }
+        
+        .search-section {
+            padding: 2rem 0;
+            background-color: #f8f9fa;
+        }
+        
+        .search-box {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .search-input {
+            border-radius: 25px;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid #ddd;
+            width: 100%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .recipe-card {
+            transition: transform 0.3s ease;
+            border-radius: 15px;
+            overflow: hidden;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .recipe-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        .recipe-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .difficulty-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .difficulty-facil {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .difficulty-media {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+
+        .difficulty-dificil {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .cooking-time {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .time-rapido {
+            color: #2e7d32;
+        }
+
+        .time-medio {
+            color: #f57c00;
+        }
+
+        .time-largo {
+            color: #c62828;
+        }
+
+        .btn-ver-detalles {
+            background-color: #17a2b8;
+            color: white;
+            padding: 0.8rem;
+            border-radius: 10px;
+            text-decoration: none;
+            text-align: center;
+            display: block;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-ver-detalles:hover {
+            background-color: #138496;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-section">
+        <div class="container">
+            <h1>Mi Libro de Recetas</h1>
+            <p>Descubre deliciosas recetas para toda ocasión</p>
+        </div>
+    </div>
+
+    <nav class="nav-section">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="/" class="nav-link d-inline-block">Inicio</a>
+                    <a href="/mis-recetas" class="nav-link d-inline-block">Mis Recetas</a>
+                </div>
+                <div sec:authorize="isAuthenticated()" class="d-flex align-items-center">
+                <span class="me-3" style="color: #17a2b8;">
+                    <i class="fas fa-user me-1"></i>
+                    <span sec:authentication="name"></span>
+                </span>
+                <form th:action="@{/logout}" method="post" class="d-inline">
+                    <button type="submit" class="btn-login">Cerrar Sesión</button>
+                </form>
+            </div>
+
+            <!-- Usuario no autenticado -->
+            <div sec:authorize="!isAuthenticated()">
+                <a href="/login" class="btn-login">Iniciar Sesión</a>
+            </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="search-section">
+        <div class="container">
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar recetas...">
+            </div>
+        </div>
+    </div>
+    <div class="container my-4">
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+            <button class="btn btn-outline-primary" onclick="filtrarRecetas('todos')">Todos</button>
+            <button class="btn btn-outline-secondary" onclick="filtrarRecetas('facil')">Fáciles</button>
+            <button class="btn btn-outline-warning" onclick="filtrarRecetas('media')">Intermedias</button>
+            <button class="btn btn-outline-danger" onclick="filtrarRecetas('dificil')">Difíciles</button>
+        </div>
+    </div>
+    
+
+    <div class="container my-5">
+        <h2 class="mb-4">Recetas Recientes</h2>
+        
+        <!-- Mensaje cuando no hay recetas -->
+        <p th:if="${#lists.isEmpty(recetasRecientes)}">No hay recetas disponibles</p>
+        
+        <!-- Lista de recetas -->
+        <div class="row g-4">
+            <div class="col-md-4 mb-4" th:each="receta : ${recetasRecientes}">
+                <div class="card recipe-card h-100">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="recipe-title" th:text="${receta.nombre}">Nombre de la receta</h5>
+                        <div class="recipe-info">
+                            <span class="difficulty-badge" 
+                                  th:classappend="${
+                                    receta.dificultad == 'Fácil' ? 'difficulty-facil' :
+                                    receta.dificultad == 'Media' ? 'difficulty-media' : 'difficulty-dificil'
+                                  }"
+                                  th:text="${receta.dificultad}">
+                            </span>
+                            <div class="cooking-time">
+                                <i class="fas fa-clock"></i>
+                                <span th:classappend="${
+                                    receta.tiempoCoccion <= 30 ? 'time-rapido' :
+                                    receta.tiempoCoccion <= 60 ? 'time-medio' : 'time-largo'
+                                  }"
+                                  th:text="${receta.tiempoCoccion + ' min'}">
+                                </span>
+                            </div>
+                        </div>
+                        <a th:href="@{/recetas/detalle/{id}(id=${receta.id})}" 
+                           class="btn-ver-detalles mt-auto">
+                            Ver Detalles
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            if (!searchInput) return; // Verifica que el elemento existe
+        
+            let timeoutId;
+        
+            searchInput.addEventListener('input', function(e) {
+                clearTimeout(timeoutId);
+                const query = e.target.value.trim();
+        
+                timeoutId = setTimeout(() => {
+                    // Añade un console.log para debug
+                    console.log('Realizando búsqueda:', query);
+        
+                    fetch(`/recetas/api/buscar?nombre=${encodeURIComponent(query)}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Error en la respuesta del servidor');
+                            }
+                            return response.json();
+                        })
+                        .then(recetas => {
+                            console.log('Recetas recibidas:', recetas); // Debug
+                            actualizarRecetas(recetas);
+                        })
+                        .catch(error => {
+                            console.error('Error en la búsqueda:', error);
+                        });
+                }, 300);
+            });
+        
+            function actualizarRecetas(recetas) {
+                const container = document.querySelector('.row.g-4');
+                if (!container) {
+                    console.error('No se encontró el contenedor de recetas');
+                    return;
+                }
+        
+                if (!recetas || recetas.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12 text-center">
+                            <p class="text-muted">No se encontraron recetas</p>
+                        </div>`;
+                    return;
+                }
+        
+                container.innerHTML = recetas.map(receta => `
+                    <div class="col-md-4 mb-4">
+                        <div class="card recipe-card h-100">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="recipe-title">${receta.nombre || 'Sin nombre'}</h5>
+                                <div class="recipe-info">
+                                    <span class="difficulty-badge ${getDificultadClass(receta.dificultad)}">
+                                        ${receta.dificultad || 'N/A'}
+                                    </span>
+                                    <div class="cooking-time">
+                                        <i class="fas fa-clock"></i>
+                                        <span class="${getTiempoClass(receta.tiempoCoccion)}">
+                                            ${receta.tiempoCoccion || 0} min
+                                        </span>
+                                    </div>
+                                </div>
+                                <a href="/recetas/detalle/${receta.id}" class="btn-ver-detalles mt-auto">
+                                    Ver Detalles
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        
+            function getDificultadClass(dificultad) {
+                switch(dificultad) {
+                    case 'Fácil': return 'difficulty-facil';
+                    case 'Media': return 'difficulty-media';
+                    case 'Difícil': return 'difficulty-dificil';
+                    default: return '';
+                }
+            }
+        
+            function getTiempoClass(tiempo) {
+                if (!tiempo) return 'time-rapido';
+                if (tiempo <= 30) return 'time-rapido';
+                if (tiempo <= 60) return 'time-medio';
+                return 'time-largo';
+            }
+        });
+        </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
